@@ -1,6 +1,8 @@
 <template>
   <div id="app">
     <h2>Vue.js WebSocket Tutorial</h2>
+    <HelloWorld :face="faceData" />
+
     <div class="camera-box">
       <video id="received_video" autoplay style="width: 400px"></video>
       <video id="local_video" autoplay muted style="width: 400px"></video>
@@ -12,14 +14,19 @@
 </template>
 
 <script>
+import HelloWorld from "./components/HelloWorld";
 export default {
   name: "App",
+  components: {
+    HelloWorld,
+  },
   data: function () {
     return {
       connection: null,
       myPeerConnection: null,
       remoteDataChannel: null,
       localDataChannel: null,
+      faceData: null,
     };
   },
   created: function () {
@@ -34,6 +41,8 @@ export default {
         self.handleVideoOfferMsg(edata.payload);
       } else if (edata.type == "IceCandidate") {
         self.handleNewICECandidateMsg(edata.payload);
+      } else if (edata.type == "FaceDescription") {
+        self.handleFaceDescription(edata.payload);
       } else console.log("message", edata);
     };
 
@@ -138,6 +147,17 @@ export default {
         };
         this.sendToServer(message);
       }
+    },
+
+    handleFaceDescription(face_info) {
+      // now we need to base64 decode into a json string then parse
+      var blend_info = atob(face_info.json_blend);
+      var blend_obj = JSON.parse(blend_info);
+
+      var geom_info = atob(face_info.json_geometry);
+      var geom_obj = JSON.parse(geom_info);
+      // console.log("geom info", geom_obj);
+      this.faceData = { faceInfo: blend_obj, faceGeometry: geom_obj };
     },
     sendToServer(message) {
       console.log("return message", message);
